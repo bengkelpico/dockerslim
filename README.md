@@ -1,7 +1,9 @@
-# picodocker
-Picobug Docker Container for Yii2 Development with Docker Compose 
+# dockerslim
 
-# My Custom Docker for laradock
-I customize docker container for my development environment easy to use daily driver. 
+Slim Docker Container for Development with Docker Compose
+
+# My Custom Docker
+
+I customize docker container for my development environment easy to use daily driver.
 
 # Thanks Laradock
