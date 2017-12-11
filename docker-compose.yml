@@ -7,8 +7,6 @@ services:
     nginx:
         build:
             context: ./nginx
-        ports:
-            - "80:80"
         volumes:
             - ./www:/www
             - ./logs/nginx/:/var/log/nginx
@@ -50,9 +48,6 @@ services:
     vsftpd:
         build:
             context: ./vsftpd
-        ports:
-        - "21:21"
-        - "21100-21110:21100-21110"
         volumes:
             - ./www/sites/media.keepo:/home/julio
         environment:
@@ -83,8 +78,6 @@ services:
     nodes:
         build:
             context: ./nodes
-        ports:
-            - "9001:8080"
         networks:
             default:
                 ipv4_address: 172.16.1.101
@@ -95,9 +88,8 @@ services:
         build: ./mariadb
         command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
         volumes:
+            - ./mariadb/conf.d:/etc/mysql/conf.d
             - mariadb:/var/lib/mysql
-        ports:
-            - "3306:3306"
         environment:
             MYSQL_DATABASE: julio_pico
             MYSQL_USER: julio
@@ -114,8 +106,6 @@ services:
         build: ./postgres
         volumes:
             - postgres:/var/lib/postgresql/data
-        ports:
-            - "5432:5432"
         environment:
             POSTGRES_DB: julio
             POSTGRES_USER: julio
