@@ -1,0 +1,131 @@
+version: '3.3'
+
+services:
+
+### Nginx Server Container ##################################
+
+    nginx:
+        build:
+            context: ./nginx
+        volumes:
+            - ./www:/www
+            - ./logs/nginx/:/var/log/nginx
+            - ./nginx/conf.d/:/etc/nginx/conf.d/
+            - ./nginx/base/:/etc/nginx/base/
+            - ./nginx/site.conf:/etc/nginx/nginx.conf
+        links:
+            - php7:php-fpm
+            # - node
+        restart: always
+        networks:
+            default:
+                ipv4_address: 172.16.1.100
+
+### PHP-FPM Container #######################################
+
+    php7:
+        build:
+            context: ./php7
+        volumes:
+            - ./www:/www
+            - ./php7/www.conf:/etc/php7/php-fpm.d/www.conf
+        links:
+            - "mariadb:mdb"
+            - "postgres:pdb"
+            - vsftpd
+            - redis
+        extra_hosts:
+            - "keepo.dev:172.16.1.100"
+            - "m.keepo.dev:172.16.1.100"
+            - "media.keepo.dev:172.16.1.100"
+        restart: always
+        networks:
+            default:
+                ipv4_address: 172.16.1.200
+
+### VSFTPD Container #######################################
+            
+    vsftpd:
+        build:
+            context: ./vsftpd
+        volumes:
+            - ./www/sites/media.keepo:/home/julio
+        environment:
+            FTP_USER: julio
+            FTP_PASS: pico
+            PASV_ADDRESS: 172.16.1.201
+            PASV_MIN: 21100
+            PASV_MAX: 21110
+        restart: always
+        networks:
+            default:
+                ipv4_address: 172.16.1.201
+
+### Redis Container #######################################
+    
+    redis:
+        build:
+            context: ./redis
+        volumes:
+            - redis:/data
+        restart: always
+        networks:
+            default:
+                ipv4_address: 172.16.1.202
+
+### Nodes Container #######################################
+    
+    nodes:
+        build:
+            context: ./nodes
+        networks:
+            default:
+                ipv4_address: 172.16.1.101
+
+### MariaDB Container #######################################
+
+    mariadb:
+        build: ./mariadb
+        command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+        volumes:
+            - ./mariadb/conf.d:/etc/mysql/conf.d
+            - mariadb:/var/lib/mysql
+        environment:
+            MYSQL_DATABASE: julio_pico
+            MYSQL_USER: julio
+            MYSQL_PASSWORD: pico
+            MYSQL_ROOT_PASSWORD: root
+        restart: always
+        networks:
+            default:
+                ipv4_address: 172.16.1.210
+
+### PostgreSQL Container ####################################
+
+    postgres:
+        build: ./postgres
+        volumes:
+            - postgres:/var/lib/postgresql/data
+        environment:
+            POSTGRES_DB: julio
+            POSTGRES_USER: julio
+            POSTGRES_PASSWORD: pico
+        restart: always
+        networks:
+            default:
+                ipv4_address: 172.16.1.211
+
+volumes:
+  mariadb:
+    driver: "local"
+  redis:
+    driver: "local"
+  postgres:
+    driver: "local"
+
+networks:
+    default:
+        driver: bridge
+        ipam:
+            config:
+                - subnet: 172.16.1.0/24
