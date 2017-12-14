@@ -14,7 +14,7 @@ services:
             - ./nginx/base/:/etc/nginx/base/
             - ./nginx/site.conf:/etc/nginx/nginx.conf
         links:
-            - php7:php-fpm
+            - phpv8:php-fpm
             # - node
         restart: always
         networks:
@@ -25,10 +25,10 @@ services:
 
     php7:
         build:
-            context: ./php7
+            context: ./php/alpine
         volumes:
             - ./www:/www
-            - ./php7/www.conf:/etc/php7/php-fpm.d/www.conf
+            - ./php/alpine/www.conf:/etc/php7/php-fpm.d/www.conf
         links:
             - "mariadb:mdb"
             - "postgres:pdb"
@@ -38,6 +38,30 @@ services:
             - "keepo.dev:172.16.1.100"
             - "m.keepo.dev:172.16.1.100"
             - "media.keepo.dev:172.16.1.100"
+        restart: always
+        networks:
+            default:
+                ipv4_address: 172.16.1.200
+
+### PHP-FPM Container #######################################
+
+    phpv8:
+        build:
+            context: ./php/alpinev8js
+        volumes:
+            - ./www:/www
+            - ./php/alpinev8js/php.conf:/etc/php/php-fpm.conf
+            - ./php/alpinev8js/conf.d/ext.ini:/etc/php/conf.d/ext.ini
+        links:
+            - "mariadb:mdb"
+            - "postgres:pdb"
+            - vsftpd
+            - redis
+        extra_hosts:
+            - "keepo.loc:172.16.1.100"
+            - "m.keepo.loc:172.16.1.100"
+            - "media.keepo.loc:172.16.1.100"
+            - "picobug.loc:172.16.1.100"
         restart: always
         networks:
             default:
