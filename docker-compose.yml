@@ -14,7 +14,8 @@ services:
             - ./nginx/base/:/etc/nginx/base/
             - ./nginx/site.conf:/etc/nginx/nginx.conf
         links:
-            - phpv8:php-fpm
+            # - phpv8:php-fpm
+            - php7:php-fpm
             # - node
         restart: always
         networks:
@@ -112,7 +113,8 @@ services:
         build: ./mariadb
         command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
         volumes:
-            - ./mariadb/conf.d:/etc/mysql/conf.d
+            # - ./mariadb/conf.d:/etc/mysql/conf.d
+            - ./www:/www
             - mariadb:/var/lib/mysql
         environment:
             MYSQL_DATABASE: julio_pico
