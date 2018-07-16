@@ -2,6 +2,22 @@ version: '3.3'
 
 services:
 
+### PPM PHP Server Balancer
+    ppm:
+        image: phppm/nginx
+        command: --debug=1 --app-env=dev --bootstrap=laravel --static-directory=public/
+        volumes:
+            - ./www/sites/picobug:/var/www
+        restart: always
+        extra_hosts:
+            - "keepo.loc:172.16.1.100"
+            - "m.keepo.loc:172.16.1.100"
+            - "media.keepo.loc:172.16.1.100"
+            - "picobug.loc:172.16.1.100"
+        networks:
+            default:
+                ipv4_address: 172.16.1.101
+
 ### Nginx Server Container ##################################
 
     nginx:
@@ -36,9 +52,9 @@ services:
             - vsftpd
             - redis
         extra_hosts:
-            - "keepo.dev:172.16.1.100"
-            - "m.keepo.dev:172.16.1.100"
-            - "media.keepo.dev:172.16.1.100"
+            - "keepo.loc:172.16.1.100"
+            - "m.keepo.loc:172.16.1.100"
+            - "media.keepo.loc:172.16.1.100"
         restart: always
         networks:
             default:
@@ -52,7 +68,7 @@ services:
         volumes:
             - ./www:/www
             - ./php/alpinev8js/php.conf:/etc/php/php-fpm.conf
-            - ./php/alpinev8js/conf.d/ext.ini:/etc/php/conf.d/ext.ini
+            - ./php/alpinev8js/conf.d/ext72.ini:/etc/php/conf.d/ext.ini
         links:
             - "mariadb:mdb"
             - "postgres:pdb"
@@ -94,6 +110,7 @@ services:
         volumes:
             - redis:/data
         restart: always
+        # command: redis-server --requirepass picoredis --maxmemory-policy allkeys-lru
         networks:
             default:
                 ipv4_address: 172.16.1.202
