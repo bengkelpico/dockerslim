@@ -1,162 +1,161 @@
-version: '3.3'
+version: "3.3"
 
 services:
+  ### PPM PHP Server Balancer
+  ppm:
+    image: phppm/nginx
+    command: --debug=1 --app-env=dev --bootstrap=laravel --static-directory=public/
+    volumes:
+      - ./www/sites/picobug:/var/www
+    restart: always
+    extra_hosts:
+      - "keepo.loc:172.16.1.100"
+      - "m.keepo.loc:172.16.1.100"
+      - "media.keepo.loc:172.16.1.100"
+      - "picobug.loc:172.16.1.100"
+    networks:
+      default:
+        ipv4_address: 172.16.1.101
 
-### PPM PHP Server Balancer
-    ppm:
-        image: phppm/nginx
-        command: --debug=1 --app-env=dev --bootstrap=laravel --static-directory=public/
-        volumes:
-            - ./www/sites/picobug:/var/www
-        restart: always
-        extra_hosts:
-            - "keepo.loc:172.16.1.100"
-            - "m.keepo.loc:172.16.1.100"
-            - "media.keepo.loc:172.16.1.100"
-            - "picobug.loc:172.16.1.100"
-        networks:
-            default:
-                ipv4_address: 172.16.1.101
+  ### Nginx Server Container ##################################
 
-### Nginx Server Container ##################################
+  nginx:
+    build:
+      context: ./nginx
+    volumes:
+      - ./www:/www
+      - ./logs/nginx/:/var/log/nginx
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
+      - ./nginx/base/:/etc/nginx/base/
+      - ./nginx/site.conf:/etc/nginx/nginx.conf
+    links:
+      # - phpv8:php-fpm
+      - php7:php-fpm
+      # - node
+    restart: always
+    networks:
+      default:
+        ipv4_address: 172.16.1.100
 
-    nginx:
-        build:
-            context: ./nginx
-        volumes:
-            - ./www:/www
-            - ./logs/nginx/:/var/log/nginx
-            - ./nginx/conf.d/:/etc/nginx/conf.d/
-            - ./nginx/base/:/etc/nginx/base/
-            - ./nginx/site.conf:/etc/nginx/nginx.conf
-        links:
-            # - phpv8:php-fpm
-            - php7:php-fpm
-            # - node
-        restart: always
-        networks:
-            default:
-                ipv4_address: 172.16.1.100
+  ### PHP-FPM Container #######################################
 
-### PHP-FPM Container #######################################
+  php7:
+    build:
+      context: ./php/alpine
+    volumes:
+      - ./www:/www
+      - ./php/alpine/www.conf:/etc/php7/php-fpm.d/www.conf
+    links:
+      - "mariadb:mdb"
+      - "postgres:pdb"
+      - vsftpd
+      - redis
+    extra_hosts:
+      - "keepo.loc:172.16.1.100"
+      - "m.keepo.loc:172.16.1.100"
+      - "media.keepo.loc:172.16.1.100"
+    restart: always
+    networks:
+      default:
+        ipv4_address: 172.16.1.200
 
-    php7:
-        build:
-            context: ./php/alpine
-        volumes:
-            - ./www:/www
-            - ./php/alpine/www.conf:/etc/php7/php-fpm.d/www.conf
-        links:
-            - "mariadb:mdb"
-            - "postgres:pdb"
-            - vsftpd
-            - redis
-        extra_hosts:
-            - "keepo.loc:172.16.1.100"
-            - "m.keepo.loc:172.16.1.100"
-            - "media.keepo.loc:172.16.1.100"
-        restart: always
-        networks:
-            default:
-                ipv4_address: 172.16.1.200
+  ### PHP-FPM Container #######################################
 
-### PHP-FPM Container #######################################
+  phpv8:
+    build:
+      context: ./php/alpinev8js
+    volumes:
+      - ./www:/www
+      - ./php/alpinev8js/php.conf:/etc/php/php-fpm.conf
+      - ./php/alpinev8js/conf.d/ext72.ini:/etc/php/conf.d/ext.ini
+    links:
+      - "mariadb:mdb"
+      - "postgres:pdb"
+      - vsftpd
+      - redis
+    extra_hosts:
+      - "keepo.loc:172.16.1.100"
+      - "m.keepo.loc:172.16.1.100"
+      - "media.keepo.loc:172.16.1.100"
+      - "picobug.loc:172.16.1.100"
+    restart: always
+    networks:
+      default:
+        ipv4_address: 172.16.1.200
 
-    phpv8:
-        build:
-            context: ./php/alpinev8js
-        volumes:
-            - ./www:/www
-            - ./php/alpinev8js/php.conf:/etc/php/php-fpm.conf
-            - ./php/alpinev8js/conf.d/ext72.ini:/etc/php/conf.d/ext.ini
-        links:
-            - "mariadb:mdb"
-            - "postgres:pdb"
-            - vsftpd
-            - redis
-        extra_hosts:
-            - "keepo.loc:172.16.1.100"
-            - "m.keepo.loc:172.16.1.100"
-            - "media.keepo.loc:172.16.1.100"
-            - "picobug.loc:172.16.1.100"
-        restart: always
-        networks:
-            default:
-                ipv4_address: 172.16.1.200
+  ### VSFTPD Container #######################################
 
-### VSFTPD Container #######################################
-            
-    vsftpd:
-        build:
-            context: ./vsftpd
-        volumes:
-            - ./www/sites/media.keepo:/home/julio
-        environment:
-            FTP_USER: julio
-            FTP_PASS: pico
-            PASV_ADDRESS: 172.16.1.201
-            PASV_MIN: 21100
-            PASV_MAX: 21110
-        restart: always
-        networks:
-            default:
-                ipv4_address: 172.16.1.201
+  vsftpd:
+    build:
+      context: ./vsftpd
+    volumes:
+      - ./www/sites/media.keepo:/home/julio
+    environment:
+      FTP_USER: julio
+      FTP_PASS: pico
+      PASV_ADDRESS: 172.16.1.201
+      PASV_MIN: 21100
+      PASV_MAX: 21110
+    restart: always
+    networks:
+      default:
+        ipv4_address: 172.16.1.201
 
-### Redis Container #######################################
-    
-    redis:
-        build:
-            context: ./redis
-        volumes:
-            - redis:/data
-        restart: always
-        # command: redis-server --requirepass picoredis --maxmemory-policy allkeys-lru
-        networks:
-            default:
-                ipv4_address: 172.16.1.202
+  ### Redis Container #######################################
 
-### Nodes Container #######################################
-    
-    nodes:
-        build:
-            context: ./nodes
-        networks:
-            default:
-                ipv4_address: 172.16.1.101
+  redis:
+    build:
+      context: ./redis
+    volumes:
+      - redis:/data
+    restart: always
+    # command: redis-server --requirepass picoredis --maxmemory-policy allkeys-lru
+    networks:
+      default:
+        ipv4_address: 172.16.1.202
 
-### MariaDB Container #######################################
+  ### Nodes Container #######################################
 
-    mariadb:
-        build: ./mariadb
-        command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
-        volumes:
-            # - ./mariadb/conf.d:/etc/mysql/conf.d
-            - ./www:/www
-            - mariadb:/var/lib/mysql
-        environment:
-            MYSQL_DATABASE: julio_pico
-            MYSQL_USER: julio
-            MYSQL_PASSWORD: pico
-            MYSQL_ROOT_PASSWORD: root
-        restart: always
-        networks:
-            default:
-                ipv4_address: 172.16.1.210
+  nodes:
+    build:
+      context: ./nodes
+    networks:
+      default:
+        ipv4_address: 172.16.1.101
 
-### PostgreSQL Container ####################################
+  ### MariaDB Container #######################################
 
-    postgres:
-        build: ./postgres
-        volumes:
-            - postgres:/var/lib/postgresql/data
-        environment:
-            POSTGRES_DB: julio
-            POSTGRES_USER: julio
-            POSTGRES_PASSWORD: pico
-        restart: always
-        networks:
-            default:
-                ipv4_address: 172.16.1.211
+  mariadb:
+    build: ./mariadb
+    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      # - ./mariadb/conf.d:/etc/mysql/conf.d
+      - ./www:/www
+      - mariadb:/var/lib/mysql
+    environment:
+      MYSQL_DATABASE: julio_pico
+      MYSQL_USER: julio
+      MYSQL_PASSWORD: pico
+      MYSQL_ROOT_PASSWORD: root
+    restart: always
+    networks:
+      default:
+        ipv4_address: 172.16.1.210
+
+  ### PostgreSQL Container ####################################
+
+  postgres:
+    build: ./postgres
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: julio
+      POSTGRES_USER: julio
+      POSTGRES_PASSWORD: pico
+    restart: always
+    networks:
+      default:
+        ipv4_address: 172.16.1.211
 
 volumes:
   mariadb:
@@ -167,8 +166,8 @@ volumes:
     driver: "local"
 
 networks:
-    default:
-        driver: bridge
-        ipam:
-            config:
-                - subnet: 172.16.1.0/24
+  default:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.16.1.0/24
