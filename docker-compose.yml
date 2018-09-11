@@ -7,7 +7,6 @@ services:
     command: --debug=1 --app-env=dev --bootstrap=laravel --static-directory=public/
     volumes:
       - ./www/sites/picobug:/var/www
-    restart: always
     extra_hosts:
       - "keepo.loc:172.16.1.100"
       - "m.keepo.loc:172.16.1.100"
@@ -32,7 +31,6 @@ services:
       # - phpv8:php-fpm
       - php7:php-fpm
       # - node
-    restart: always
     networks:
       default:
         ipv4_address: 172.16.1.100
@@ -54,7 +52,6 @@ services:
       - "keepo.loc:172.16.1.100"
       - "m.keepo.loc:172.16.1.100"
       - "media.keepo.loc:172.16.1.100"
-    restart: always
     networks:
       default:
         ipv4_address: 172.16.1.200
@@ -78,7 +75,6 @@ services:
       - "m.keepo.loc:172.16.1.100"
       - "media.keepo.loc:172.16.1.100"
       - "picobug.loc:172.16.1.100"
-    restart: always
     networks:
       default:
         ipv4_address: 172.16.1.200
@@ -96,7 +92,6 @@ services:
       PASV_ADDRESS: 172.16.1.201
       PASV_MIN: 21100
       PASV_MAX: 21110
-    restart: always
     networks:
       default:
         ipv4_address: 172.16.1.201
@@ -108,7 +103,6 @@ services:
       context: ./redis
     volumes:
       - redis:/data
-    restart: always
     # command: redis-server --requirepass picoredis --maxmemory-policy allkeys-lru
     networks:
       default:
@@ -137,7 +131,6 @@ services:
       MYSQL_USER: julio
       MYSQL_PASSWORD: pico
       MYSQL_ROOT_PASSWORD: root
-    restart: always
     networks:
       default:
         ipv4_address: 172.16.1.210
@@ -152,7 +145,6 @@ services:
       POSTGRES_DB: julio
       POSTGRES_USER: julio
       POSTGRES_PASSWORD: pico
-    restart: always
     networks:
       default:
         ipv4_address: 172.16.1.211
