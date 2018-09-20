@@ -1,4 +1,4 @@
-FROM alexmasterov/alpine-php:7.2
+FROM alexmasterov/alpine-php:7.0
 
 LABEL maintainer="Picobug<picobugjp@gmail.com>"
 
