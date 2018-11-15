@@ -12,6 +12,7 @@ services:
       - "m.keepo.loc:172.16.1.100"
       - "media.keepo.loc:172.16.1.100"
       - "picobug.loc:172.16.1.100"
+    restart: always
     networks:
       default:
         ipv4_address: 172.16.1.101
@@ -27,10 +28,11 @@ services:
       - ./nginx/conf.d/:/etc/nginx/conf.d/
       - ./nginx/base/:/etc/nginx/base/
       - ./nginx/site.conf:/etc/nginx/nginx.conf
-    links:
+    depends_on:
       # - phpv8:php-fpm
-      - php7:php-fpm
+      - php7
       # - node
+    restart: always
     networks:
       default:
         ipv4_address: 172.16.1.100
@@ -43,11 +45,12 @@ services:
     volumes:
       - ./www:/www
       - ./php/alpine/www.conf:/etc/php7/php-fpm.d/www.conf
-    links:
-      - "mariadb:mdb"
-      - "postgres:pdb"
+    depends_on:
+      - mariadb
+      - postgres
       - vsftpd
       - redis
+    restart: always
     extra_hosts:
       - "keepo.loc:172.16.1.100"
       - "m.keepo.loc:172.16.1.100"
@@ -62,9 +65,9 @@ services:
       - ./www:/www
       - ./php/alpinev8js/php.conf:/etc/php/php-fpm.conf
       - ./php/alpinev8js/conf.d/ext72.ini:/etc/php/conf.d/ext.ini
-    links:
-      - "mariadb:mdb"
-      - "postgres:pdb"
+    depends_on:
+      - mariadb
+      - postgres
       - vsftpd
       - redis
     extra_hosts:
@@ -86,6 +89,7 @@ services:
       PASV_ADDRESS: 172.16.1.201
       PASV_MIN: 21100
       PASV_MAX: 21110
+    restart: always
     networks:
       default:
         ipv4_address: 172.16.1.201
@@ -98,6 +102,7 @@ services:
     volumes:
       - redis:/data
     # command: redis-server --requirepass picoredis --maxmemory-policy allkeys-lru
+    restart: always
     networks:
       default:
         ipv4_address: 172.16.1.202
@@ -115,13 +120,13 @@ services:
     command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     volumes:
       # - ./mariadb/conf.d:/etc/mysql/conf.d
-      - ./www:/www
       - mariadb:/var/lib/mysql
     environment:
       MYSQL_DATABASE: julio_pico
       MYSQL_USER: julio
       MYSQL_PASSWORD: pico
       MYSQL_ROOT_PASSWORD: root
+    restart: always
     networks:
       default:
         ipv4_address: 172.16.1.210
@@ -136,6 +141,7 @@ services:
       POSTGRES_DB: julio
       POSTGRES_USER: julio
       POSTGRES_PASSWORD: pico
+    restart: always
     networks:
       default:
         ipv4_address: 172.16.1.211
@@ -150,7 +156,5 @@ volumes:
 
 networks:
   default:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.16.1.0/24
+    external:
+      name: picobug
