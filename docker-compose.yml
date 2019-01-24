@@ -6,7 +6,7 @@ services:
     image: phppm/nginx
     command: --debug=1 --app-env=dev --bootstrap=laravel --static-directory=public/
     volumes:
-      - ./www/sites/picobug:/var/www
+      - ../www/sites/picobug:/var/www
     extra_hosts:
       - "keepo.loc:172.16.1.100"
       - "m.keepo.loc:172.16.1.100"
@@ -23,9 +23,10 @@ services:
     build:
       context: ./nginx
     volumes:
-      - ./www:/www
+      - ../www:/www
       - ./logs/nginx/:/var/log/nginx
       - ./nginx/conf.d/:/etc/nginx/conf.d/
+      - ./nginx/cert/:/etc/nginx/cert/
       - ./nginx/base/:/etc/nginx/base/
       - ./nginx/site.conf:/etc/nginx/nginx.conf
     depends_on:
@@ -43,7 +44,7 @@ services:
     build:
       context: ./php/alpine
     volumes:
-      - ./www:/www
+      - ../www:/www
       - ./php/alpine/www.conf:/etc/php7/php-fpm.d/www.conf
     depends_on:
       - mariadb
@@ -62,7 +63,7 @@ services:
     build:
       context: ./php/alpinev8js
     volumes:
-      - ./www:/www
+      - ../www:/www
       - ./php/alpinev8js/php.conf:/etc/php/php-fpm.conf
       - ./php/alpinev8js/conf.d/ext72.ini:/etc/php/conf.d/ext.ini
     depends_on:
@@ -82,7 +83,7 @@ services:
     build:
       context: ./vsftpd
     volumes:
-      - ./www/sites/media.keepo:/home/julio
+      - ../www/sites/media.keepo:/home/julio
     environment:
       FTP_USER: julio
       FTP_PASS: pico
@@ -120,6 +121,7 @@ services:
     command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     volumes:
       # - ./mariadb/conf.d:/etc/mysql/conf.d
+      - ../www:/www
       - mariadb:/var/lib/mysql
     environment:
       MYSQL_DATABASE: julio_pico
