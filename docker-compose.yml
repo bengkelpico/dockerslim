@@ -1,4 +1,4 @@
-version: "3.3"
+version: '3.3'
 
 services:
   ### PPM PHP Server Balancer
@@ -8,10 +8,10 @@ services:
     volumes:
       - ../www/sites/picobug:/var/www
     extra_hosts:
-      - "keepo.loc:172.16.1.100"
-      - "m.keepo.loc:172.16.1.100"
-      - "media.keepo.loc:172.16.1.100"
-      - "picobug.loc:172.16.1.100"
+      - 'keepo.loc:172.16.1.100'
+      - 'm.keepo.loc:172.16.1.100'
+      - 'media.keepo.loc:172.16.1.100'
+      - 'picobug.loc:172.16.1.100'
     restart: always
     networks:
       default:
@@ -20,17 +20,16 @@ services:
   ### Nginx Server Container ##################################
 
   nginx:
-    build:
-      context: ./nginx
+    image: fholzer/nginx-brotli
     volumes:
       - ../www:/www
       - ./logs/nginx/:/var/log/nginx
       - ./nginx/conf.d/:/etc/nginx/conf.d/
-      - ./nginx/cert/:/etc/nginx/cert/
+      - ~/.local/certs/:/etc/nginx/cert/
       - ./nginx/base/:/etc/nginx/base/
       - ./nginx/site.conf:/etc/nginx/nginx.conf
     depends_on:
-      # - phpv8:php-fpm
+      # - phpv8
       - php7
       # - node
     restart: always
@@ -41,47 +40,41 @@ services:
   ### PHP-FPM Container #######################################
 
   php7:
-    build:
-      context: ./php/alpine
+    image: picobug/php71
     volumes:
       - ../www:/www
       - ./php/alpine/www.conf:/etc/php7/php-fpm.d/www.conf
     depends_on:
-      - mariadb
       - postgres
-      - vsftpd
       - redis
     restart: always
     extra_hosts:
-      - "keepo.loc:172.16.1.100"
-      - "m.keepo.loc:172.16.1.100"
-      - "media.keepo.loc:172.16.1.100"
+      - 'keepo.loc:172.16.1.100'
+      - 'm.keepo.loc:172.16.1.100'
+      - 'media.keepo.loc:172.16.1.100'
 
   ### PHP-FPM Container #######################################
 
   phpv8:
-    build:
-      context: ./php/alpinev8js
+    image: alexmasterov/alpine-php:7.1
     volumes:
       - ../www:/www
       - ./php/alpinev8js/php.conf:/etc/php/php-fpm.conf
-      - ./php/alpinev8js/conf.d/ext72.ini:/etc/php/conf.d/ext.ini
+      - ./php/alpinev8js/conf.d/ext71.ini:/etc/php/conf.d/ext.ini
     depends_on:
-      - mariadb
       - postgres
-      - vsftpd
       - redis
+    restart: always
     extra_hosts:
-      - "keepo.loc:172.16.1.100"
-      - "m.keepo.loc:172.16.1.100"
-      - "media.keepo.loc:172.16.1.100"
-      - "picobug.loc:172.16.1.100"
+      - 'keepo.loc:172.16.1.100'
+      - 'm.keepo.loc:172.16.1.100'
+      - 'media.keepo.loc:172.16.1.100'
+      - 'picobug.loc:172.16.1.100'
 
   ### VSFTPD Container #######################################
 
   vsftpd:
-    build:
-      context: ./vsftpd
+    image: picobug/ftp
     volumes:
       - ../www/sites/media.keepo:/home/julio
     environment:
@@ -98,8 +91,7 @@ services:
   ### Redis Container #######################################
 
   redis:
-    build:
-      context: ./redis
+    image: redis:alpine
     volumes:
       - redis:/data
     # command: redis-server --requirepass picoredis --maxmemory-policy allkeys-lru
@@ -117,7 +109,7 @@ services:
   ### MariaDB Container #######################################
 
   mariadb:
-    build: ./mariadb
+    image: mariadb
     command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     volumes:
       # - ./mariadb/conf.d:/etc/mysql/conf.d
@@ -136,12 +128,12 @@ services:
   ### PostgreSQL Container ####################################
 
   postgres:
-    build: ./postgres
+    image: postgres:alpine
     volumes:
       - postgres:/var/lib/postgresql/data
     environment:
       POSTGRES_DB: julio
-      POSTGRES_USER: julio
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: pico
     restart: always
     networks:
@@ -150,11 +142,11 @@ services:
 
 volumes:
   mariadb:
-    driver: "local"
+    driver: 'local'
   redis:
-    driver: "local"
+    driver: 'local'
   postgres:
-    driver: "local"
+    driver: 'local'
 
 networks:
   default:
