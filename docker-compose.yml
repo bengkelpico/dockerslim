@@ -40,11 +40,12 @@ services:
   ### PHP-FPM Container #######################################
 
   php7:
-    image: picobug/php71
+    image: picobug/php7
     volumes:
       - ../www:/www
       - ./php/alpine/www.conf:/etc/php7/php-fpm.d/www.conf
     depends_on:
+      - mariadb
       - postgres
       - redis
     restart: always
@@ -109,17 +110,17 @@ services:
   ### MariaDB Container #######################################
 
   mariadb:
-    image: mariadb
-    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    image: bitnami/mariadb
+    # command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     volumes:
       # - ./mariadb/conf.d:/etc/mysql/conf.d
       - ../www:/www
-      - mariadb:/var/lib/mysql
+      - mariadb:/bitnami/mariadb
     environment:
-      MYSQL_DATABASE: julio_pico
-      MYSQL_USER: julio
-      MYSQL_PASSWORD: pico
-      MYSQL_ROOT_PASSWORD: root
+      MARIADB_DATABASE: julio_pico
+      MARIADB_USER: julio
+      MARIADB_PASSWORD: pico
+      MARIADB_ROOT_PASSWORD: root
     restart: always
     networks:
       default:
@@ -128,13 +129,15 @@ services:
   ### PostgreSQL Container ####################################
 
   postgres:
-    image: postgres:alpine
+    image: bitnami/postgresql
     volumes:
-      - postgres:/var/lib/postgresql/data
+      - postgres:/bitnami/postgresql
+      - './postgres:/docker-entrypoint-initdb.d'
+      - './logs:/docker-entrypoint-preinitdb.d'
     environment:
-      POSTGRES_DB: julio
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: pico
+      POSTGRESQL_DATABASE: julio_pico
+      POSTGRESQL_USERNAME: julio
+      POSTGRESQL_PASSWORD: pico
     restart: always
     networks:
       default:
