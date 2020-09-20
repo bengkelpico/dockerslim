@@ -20,6 +20,7 @@ services:
   ### Nginx Server Container ##################################
 
   nginx:
+    # image: nginx:alpine
     image: fholzer/nginx-brotli
     volumes:
       - ../www:/www
@@ -40,10 +41,11 @@ services:
   ### PHP-FPM Container #######################################
 
   php7:
-    image: picobug/php7
+    image: picobug/php7:legacy
     volumes:
       - ../www:/www
       - ./php/alpine/www.conf:/etc/php7/php-fpm.d/www.conf
+      - ./php/php.ini:/usr/local/etc/php/php.ini
     depends_on:
       - mariadb
       - postgres
@@ -93,9 +95,13 @@ services:
 
   redis:
     image: redis:alpine
+    hostname: db.pico.test
+    labels:
+      - 'traefik.tcp.routers.redis.rule=HostSNI(`*`)'
+      - 'traefik.tcp.routers.redis.entrypoints=redis'
     volumes:
       - redis:/data
-    # command: redis-server --requirepass picoredis --maxmemory-policy allkeys-lru
+    command: redis-server --maxmemory 32mb --appendonly no --maxmemory-policy allkeys-lfu
     restart: always
     networks:
       default:
@@ -111,16 +117,22 @@ services:
 
   mariadb:
     image: bitnami/mariadb
+    hostname: db.pico.test
+    labels:
+      - 'traefik.tcp.routers.mariadb.rule=HostSNI(`*`)'
+      - 'traefik.tcp.routers.mariadb.entrypoints=mariadb'
     # command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     volumes:
       # - ./mariadb/conf.d:/etc/mysql/conf.d
-      - ../www:/www
+      - ./mariadb/conf.d/my.cnf:/opt/bitnami/mariadb/conf/my_custom.cnf
       - mariadb:/bitnami/mariadb
     environment:
       MARIADB_DATABASE: julio_pico
       MARIADB_USER: julio
       MARIADB_PASSWORD: pico
       MARIADB_ROOT_PASSWORD: root
+      MARIADB_CHARACTER_SET: utf8mb4
+      MARIADB_COLLATE: utf8mb4_unicode_ci
     restart: always
     networks:
       default:
@@ -130,6 +142,10 @@ services:
 
   postgres:
     image: bitnami/postgresql
+    hostname: db.pico.test
+    labels:
+      - 'traefik.tcp.routers.postgres.rule=HostSNI(`*`)'
+      - 'traefik.tcp.routers.postgres.entrypoints=postgres'
     volumes:
       - postgres:/bitnami/postgresql
       - './postgres:/docker-entrypoint-initdb.d'
