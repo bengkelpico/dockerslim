@@ -8,9 +8,6 @@ services:
     volumes:
       - ../www/sites/picobug:/var/www
     extra_hosts:
-      - 'keepo.loc:172.16.1.100'
-      - 'm.keepo.loc:172.16.1.100'
-      - 'media.keepo.loc:172.16.1.100'
       - 'picobug.loc:172.16.1.100'
     restart: always
     networks:
@@ -20,8 +17,8 @@ services:
   ### Nginx Server Container ##################################
 
   nginx:
-    # image: nginx:alpine
-    image: fholzer/nginx-brotli
+    image: nginx:alpine
+    # image: fholzer/nginx-brotli
     volumes:
       - ../www:/www
       - ./logs/nginx/:/var/log/nginx
@@ -41,7 +38,7 @@ services:
   ### PHP-FPM Container #######################################
 
   php7:
-    image: picobug/php7:legacy
+    image: picobug/php7:dev
     volumes:
       - ../www:/www
       - ./php/alpine/www.conf:/etc/php7/php-fpm.d/www.conf
@@ -116,23 +113,25 @@ services:
   ### MariaDB Container #######################################
 
   mariadb:
-    image: bitnami/mariadb
+    image: mariadb
     hostname: db.pico.test
     labels:
       - 'traefik.tcp.routers.mariadb.rule=HostSNI(`*`)'
       - 'traefik.tcp.routers.mariadb.entrypoints=mariadb'
-    # command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     volumes:
       # - ./mariadb/conf.d:/etc/mysql/conf.d
-      - ./mariadb/conf.d/my.cnf:/opt/bitnami/mariadb/conf/my_custom.cnf
-      - mariadb:/bitnami/mariadb
+      # - ./mariadb/conf.d/my.cnf:/opt/bitnami/mariadb/conf/my_custom.cnf
+      # - mariadb:/bitnami/mariadb
+      - mariadb:/var/lib/mysql
     environment:
-      MARIADB_DATABASE: julio_pico
-      MARIADB_USER: julio
-      MARIADB_PASSWORD: pico
-      MARIADB_ROOT_PASSWORD: root
-      MARIADB_CHARACTER_SET: utf8mb4
-      MARIADB_COLLATE: utf8mb4_unicode_ci
+      MYSQL_DATABASE: julio_pico
+      MYSQL_USER: julio
+      MYSQL_PASSWORD: pico
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_CHARACTER_SET: utf8mb4
+      MYSQL_COLLATE: utf8mb4_unicode_ci
+      MYSQL_INITDB_SKIP_TZINFO:
     restart: always
     networks:
       default:
@@ -141,19 +140,21 @@ services:
   ### PostgreSQL Container ####################################
 
   postgres:
-    image: bitnami/postgresql
+    # image: bitnami/postgresql
+    image: postgres:alpine
     hostname: db.pico.test
     labels:
       - 'traefik.tcp.routers.postgres.rule=HostSNI(`*`)'
       - 'traefik.tcp.routers.postgres.entrypoints=postgres'
     volumes:
-      - postgres:/bitnami/postgresql
+      # - postgres:/bitnami/postgresql
+      - postgres:/var/lib/postgresql/data
       - './postgres:/docker-entrypoint-initdb.d'
       - './logs:/docker-entrypoint-preinitdb.d'
     environment:
-      POSTGRESQL_DATABASE: julio_pico
-      POSTGRESQL_USERNAME: julio
-      POSTGRESQL_PASSWORD: pico
+      POSTGRES_DB: julio_pico
+      POSTGRES_USER: julio
+      POSTGRES_PASSWORD: pico
     restart: always
     networks:
       default:
