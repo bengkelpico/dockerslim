@@ -38,7 +38,7 @@ services:
   ### PHP-FPM Container #######################################
 
   php7:
-    image: picobug/php7:dev
+    image: picobug/php:7
     volumes:
       - ../www:/www
       - ./php/alpine/www.conf:/etc/php7/php-fpm.d/www.conf
