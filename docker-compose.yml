@@ -17,7 +17,7 @@ services:
   ### Nginx Server Container ##################################
 
   nginx:
-    image: nginx:alpine
+    image: nginx:stable-alpine
     # image: fholzer/nginx-brotli
     volumes:
       - ../www:/www
@@ -28,7 +28,7 @@ services:
       - ./nginx/site.conf:/etc/nginx/nginx.conf
     depends_on:
       # - phpv8
-      - php7
+      - php
       # - node
     restart: always
     networks:
@@ -37,8 +37,9 @@ services:
 
   ### PHP-FPM Container #######################################
 
-  php7:
-    image: picobug/php:7
+  php:
+    hostname: slim_php
+    image: picobug/php:72
     volumes:
       - ../www:/www
       - ./php/alpine/www.conf:/etc/php7/php-fpm.d/www.conf
