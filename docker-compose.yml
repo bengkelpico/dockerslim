@@ -96,6 +96,8 @@ services:
     labels:
       - 'traefik.tcp.routers.redis.rule=HostSNI(`*`)'
       - 'traefik.tcp.routers.redis.entrypoints=redis'
+      - 'traefik.tcp.routers.redis.service=redis-proxy'
+      - 'traefik.tcp.services.redis-proxy.loadbalancer.server.port=6379'
     volumes:
       - redis:/data
     command: redis-server --maxmemory 64mb --appendonly no --maxmemory-policy allkeys-lfu
@@ -118,7 +120,9 @@ services:
     labels:
       - 'traefik.tcp.routers.mariadb.rule=HostSNI(`*`)'
       - 'traefik.tcp.routers.mariadb.entrypoints=mariadb'
-    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+      - 'traefik.tcp.routers.redis.service=mariadb-proxy'
+      - 'traefik.tcp.services.mariadb-proxy.loadbalancer.server.port=3306'
+    # command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     volumes:
       # - ./mariadb/conf.d:/etc/mysql/conf.d
       # - ./mariadb/conf.d/my.cnf:/opt/bitnami/mariadb/conf/my_custom.cnf
@@ -146,6 +150,8 @@ services:
     labels:
       - 'traefik.tcp.routers.postgres.rule=HostSNI(`*`)'
       - 'traefik.tcp.routers.postgres.entrypoints=postgres'
+      - 'traefik.tcp.routers.redis.service=postgres-proxy'
+      - 'traefik.tcp.services.postgres-proxy.loadbalancer.server.port=5432'
     volumes:
       # - postgres:/bitnami/postgresql
       - postgres:/var/lib/postgresql/data
