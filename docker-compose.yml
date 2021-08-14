@@ -18,7 +18,12 @@ services:
 
   nginx:
     image: nginx:alpine
-    # image: fholzer/nginx-brotli
+    labels:
+      - 'traefik.http.routers.slim.rule=HostRegexp(`local.loc`,`pico.loc`,`{subdomain:[a-z]+}.pico.loc`)'
+      - 'traefik.http.routers.slim.entrypoints=websecure'
+      - 'traefik.http.routers.slim.tls=true'
+      - 'traefik.http.routers.slim.service=slim'
+      - 'traefik.http.services.slim.loadbalancer.server.port=80'
     volumes:
       - ../www:/www
       - ./logs/nginx/:/var/log/nginx
@@ -39,7 +44,7 @@ services:
 
   php:
     hostname: slim_php
-    image: picobug/php:7
+    image: picobug/php:mssql
     volumes:
       - ../www:/www
       - ./php/alpine/www.conf:/etc/php7/php-fpm.d/www.conf
@@ -49,6 +54,7 @@ services:
       - mariadb
       - postgres
       - redis
+      # - mssql
     restart: always
     extra_hosts:
       - 'pico.loc:172.16.1.100'
@@ -166,12 +172,33 @@ services:
       default:
         ipv4_address: 172.16.1.211
 
+  ### MSSQL Container #######################################
+
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    hostname: db.pico.test
+    volumes:
+      # - ./mariadb/conf.d:/etc/mysql/conf.d
+      # - ./mariadb/conf.d/my.cnf:/opt/bitnami/mariadb/conf/my_custom.cnf
+      # - mariadb:/bitnami/mariadb
+      - mssql:/var/opt/mssql
+    environment:
+      ACCEPT_EULA: 'Y'
+      MSSQL_SA_PASSWORD: Opensourc3!
+      SA_PASSWORD: Opensourc3
+    restart: always
+    networks:
+      default:
+        ipv4_address: 172.16.1.212
+
 volumes:
   mariadb:
     driver: 'local'
   redis:
     driver: 'local'
   postgres:
+    driver: 'local'
+  mssql:
     driver: 'local'
 
 networks:
