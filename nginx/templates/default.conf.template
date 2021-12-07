@@ -1,0 +1,93 @@
+server {
+	set $basepath "/www/sites";
+
+	set $domain $host;
+	set $subdomain "public";
+
+	# check one name domain for simple application
+	if ($domain ~ "^(.[^.]*)\.(?<tld>[^.]+)$") {
+		set $domain $1;
+		set $rootpath "${domain}";
+		set $servername "${domain}.${tld}";
+	}
+	# check multi name domain to multi application
+	if ($domain ~ "^(.*)\.(.[^.]*)\.(?<tld>[^.]+)$") {
+		set $subdomain $1;
+		set $domain $2;
+		set $rootpath "${subdomain}.${domain}";
+		set $servername "${subdomain}.${domain}.${tld}";
+	}
+	set $reset $domain;
+	if (-d "${basepath}/${domain}/public") {
+		set $rootpath "${domain}/public";
+	}
+	if (-d "${basepath}/${domain}/web") {
+		set $rootpath "${domain}/web";
+	}
+	if (-d "${basepath}/${domain}/webroot") {
+		set $rootpath "${domain}/webroot";
+	}
+	if (-d "${basepath}/${subdomain}.${domain}") {
+		set $rootpath "${subdomain}.${domain}";
+		set $reset "${subdomain}.${domain}";
+	}
+	if (-d "${basepath}/${subdomain}.${domain}/public") {
+		set $rootpath "${subdomain}.${domain}/public";
+	}
+	if (-d "${basepath}/${subdomain}.${domain}/web") {
+		set $rootpath "${subdomain}.${domain}/web";
+	}
+	if (-d "${basepath}/${subdomain}.${domain}/webroot") {
+		set $rootpath "${subdomain}.${domain}/webroot";
+	}
+	if (!-f "${basepath}/${rootpath}/index.php") {
+        set $rootpath $reset;
+    }
+
+	server_name "${servername}";
+
+	error_log  /var/log/nginx/error.log;
+    access_log /var/log/nginx/access.log main if=$loggable;
+
+	root "${basepath}/${rootpath}";
+
+    include base/main.conf;
+    location ~ \.php$ {
+        fastcgi_split_path_info ^(.+\.php)(/.+)$;
+        fastcgi_pass ${PHP_HOST}:9000;
+        fastcgi_index index.php;
+        include fastcgi_params;
+        fastcgi_param SERVER_NAME $servername;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        fastcgi_param PATH_INFO $fastcgi_path_info;
+        fastcgi_param HTTP_PROXY "";
+        fastcgi_buffer_size 128k;
+        fastcgi_buffers 256 16k;
+        fastcgi_busy_buffers_size 256k;
+        fastcgi_temp_file_write_size 256k;
+        fastcgi_read_timeout 120;
+    }
+}
+
+server {
+    server_name ${DOMAIN_EXT};
+    error_log  /var/log/nginx/error.log;
+    access_log /var/log/nginx/access.log main if=$loggable;
+    root /www/public;
+    include base/main.conf;
+    location ~ \.php$ {
+        fastcgi_split_path_info ^(.+\.php)(/.+)$;
+        fastcgi_pass ${PHP_HOST}:9000;
+        fastcgi_index index.php;
+        include fastcgi_params;
+        fastcgi_param SERVER_NAME $servername;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        fastcgi_param PATH_INFO $fastcgi_path_info;
+        fastcgi_param HTTP_PROXY "";
+        fastcgi_buffer_size 128k;
+        fastcgi_buffers 256 16k;
+        fastcgi_busy_buffers_size 256k;
+        fastcgi_temp_file_write_size 256k;
+        fastcgi_read_timeout 120;
+    }
+}
