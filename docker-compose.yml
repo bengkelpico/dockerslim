@@ -4,7 +4,7 @@ services:
   nginx:
     image: nginx:alpine
     labels:
-      - 'traefik.http.routers.slim.rule=HostRegexp(`${DOMAIN_EXT}`,`${DOMAIN_MAIN}`,`{subdomain:[a-z]+}.${DOMAIN_MAIN}`)'
+      - 'traefik.http.routers.slim.rule=HostRegexp(`${DOMAIN_EXT}`,`${DOMAIN_MAIN}`,`{subdomain:[a-z]+}.${DOMAIN_MAIN}`, `${DOMAIN_DEV_MAIN}`,`{subdomain:[a-z]+}.${DOMAIN_DEV_MAIN}`)'
       - 'traefik.http.routers.slim.entrypoints=websecure'
       - 'traefik.http.routers.slim.tls=true'
       - 'traefik.http.routers.slim.service=slim'
@@ -17,6 +17,7 @@ services:
       - ./nginx/templates:/etc/nginx/templates
     depends_on:
       - php
+      - phpdev
     env_file:
       - .env
     restart: always
@@ -42,10 +43,26 @@ services:
     extra_hosts:
       - "${DOMAIN_MAIN}:172.16.1.100"
 
+  phpdev:
+    hostname: "${PHP_DEV_HOST}"
+    image: picobug/php
+    user: www-data
+    volumes:
+      - ../www:/www
+      - ./php/php.ini:/usr/local/etc/php/php.ini
+    depends_on:
+      - mariadb
+      - postgres
+      - redis
+    restart: always
+    extra_hosts:
+      - "${DOMAIN_MAIN}:172.16.1.100"
+
   ### Redis Container #######################################
 
   redis:
-    image: redis:alpine
+    image: eqalpha/keydb:alpine
+    # image: redis:alpine
     hostname: db.pico.test
     labels:
       - 'traefik.tcp.routers.redis.rule=HostSNI(`*`)'
@@ -54,7 +71,8 @@ services:
       - 'traefik.tcp.services.redis-proxy.loadbalancer.server.port=6379'
     volumes:
       - redis:/data
-    command: redis-server --maxmemory 64mb --appendonly no --maxmemory-policy allkeys-lfu
+    # command: redis-server --maxmemory 64mb --appendonly no --maxmemory-policy allkeys-lfu
+    command: keydb-server /etc/keydb/keydb.conf --maxmemory 64mb --appendonly no --maxmemory-policy allkeys-lfu
     restart: always
     networks:
       default:

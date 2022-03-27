@@ -1,7 +1,9 @@
 server {
 	set $basepath "/www/sites";
+	set $phplink ${PHP_HOST};
 
 	set $domain $host;
+	set $maindomain $host;
 	set $subdomain "public";
 
 	# check one name domain for simple application
@@ -9,6 +11,7 @@ server {
 		set $domain $1;
 		set $rootpath "${domain}";
 		set $servername "${domain}.${tld}";
+		set $maindomain "${domain}.${tld}";
 	}
 	# check multi name domain to multi application
 	if ($domain ~ "^(.*)\.(.[^.]*)\.(?<tld>[^.]+)$") {
@@ -16,6 +19,12 @@ server {
 		set $domain $2;
 		set $rootpath "${subdomain}.${domain}";
 		set $servername "${subdomain}.${domain}.${tld}";
+		set $maindomain "${domain}.${tld}";
+	}
+
+	if ($maindomain = ${DOMAIN_DEV_MAIN}) {
+		set $phplink ${PHP_DEV_HOST};
+		set $basepath "/www/php";
 	}
 	set $reset $domain;
 	if (-d "${basepath}/${domain}/public") {
@@ -54,7 +63,7 @@ server {
     include base/main.conf;
     location ~ \.php$ {
         fastcgi_split_path_info ^(.+\.php)(/.+)$;
-        fastcgi_pass ${PHP_HOST}:9000;
+        fastcgi_pass $phplink:9000;
         fastcgi_index index.php;
         include fastcgi_params;
         fastcgi_param SERVER_NAME $servername;
