@@ -16,7 +16,6 @@ services:
       - ./nginx/site.conf:/etc/nginx/nginx.conf
       - ./nginx/templates:/etc/nginx/templates
     depends_on:
-      - keydb
       - php
       - phpdev
     env_file:
@@ -40,9 +39,11 @@ services:
       - mariadb
       - postgres
       - redis
+      - keydb
     restart: always
     extra_hosts:
       - "${DOMAIN_MAIN}:172.16.1.100"
+      - "projek.pico.dev:172.16.1.100"
 
   phpdev:
     hostname: "${PHP_DEV_HOST}"
@@ -55,6 +56,7 @@ services:
       - mariadb
       - postgres
       - redis
+      - keydb
     restart: always
     extra_hosts:
       - "${DOMAIN_MAIN}:172.16.1.100"
@@ -64,6 +66,9 @@ services:
   redis:
     # image: eqalpha/keydb:alpine
     image: redis:alpine
+    # image: 'docker.dragonflydb.io/dragonflydb/dragonfly'
+    ulimits:
+      memlock: -1
     hostname: db.pico.test
     labels:
       - 'traefik.tcp.routers.redis.rule=HostSNI(`*`)'
@@ -76,19 +81,17 @@ services:
     command: redis-server --maxmemory 32mb --appendonly no --maxmemory-policy allkeys-lru
     # command: keydb-server /etc/keydb/keydb.conf --maxmemory 64mb --appendonly no --maxmemory-policy allkeys-lfu
     restart: always
-    networks:
-      default:
-        ipv4_address: 172.16.1.202
   
   keydb:
-    image: eqalpha/keydb:alpine
+    image: redis:alpine
+    # image: eqalpha/keydb:alpine
+    ulimits:
+      memlock: -1
     volumes:
       - keydb:/data
-    command: keydb-server /etc/keydb/keydb.conf --maxmemory 16mb --appendonly no --maxmemory-policy allkeys-lru
+    # command: keydb-server /etc/keydb/keydb.conf --maxmemory 16mb --appendonly no --maxmemory-policy allkeys-lru
+    command: redis-server --maxmemory 16mb --appendonly no --maxmemory-policy allkeys-lfu
     restart: always
-    networks:
-      default:
-        ipv4_address: 172.16.1.203
 
   ### MariaDB Container #######################################
 
@@ -98,7 +101,7 @@ services:
     labels:
       - 'traefik.tcp.routers.mariadb.rule=HostSNI(`*`)'
       - 'traefik.tcp.routers.mariadb.entrypoints=mariadb'
-      - 'traefik.tcp.routers.redis.service=mariadb-proxy'
+      - 'traefik.tcp.routers.mariadb.service=mariadb-proxy'
       - 'traefik.tcp.services.mariadb-proxy.loadbalancer.server.port=3306'
     # command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     volumes:
@@ -112,9 +115,6 @@ services:
       MYSQL_COLLATE: utf8mb4_unicode_ci
       MYSQL_INITDB_SKIP_TZINFO:
     restart: always
-    networks:
-      default:
-        ipv4_address: 172.16.1.210
 
   ### PostgreSQL Container ####################################
 
@@ -124,7 +124,7 @@ services:
     labels:
       - 'traefik.tcp.routers.postgres.rule=HostSNI(`*`)'
       - 'traefik.tcp.routers.postgres.entrypoints=postgres'
-      - 'traefik.tcp.routers.redis.service=postgres-proxy'
+      - 'traefik.tcp.routers.postgres.service=postgres-proxy'
       - 'traefik.tcp.services.postgres-proxy.loadbalancer.server.port=5432'
     volumes:
       - postgres:/var/lib/postgresql/data
@@ -135,10 +135,6 @@ services:
       POSTGRES_USER: julio
       POSTGRES_PASSWORD: pico
     restart: always
-    networks:
-      default:
-        ipv4_address: 172.16.1.211
-
 volumes:
   mariadb:
     driver: 'local'
