@@ -1,6 +1,23 @@
 version: '3.3'
 
 services:
+  caddy:
+    labels:
+      - 'traefik.http.routers.caddy.rule=HostRegexp(`${DOMAIN_EXT}`,`${DOMAIN_MAIN}`,`{subdomain:[a-z\-\_]+}.${DOMAIN_MAIN}`, `${DOMAIN_DEV_MAIN}`,`{subdomain:[a-z\-\_]+}.${DOMAIN_DEV_MAIN}`)'
+      - 'traefik.http.routers.caddy.entrypoints=websecure'
+      - 'traefik.http.routers.caddy.tls=true'
+      - 'traefik.http.routers.caddy.service=caddy'
+      - 'traefik.http.routers.caddy.middlewares=caddy'
+      - 'traefik.http.middlewares.caddy.compress=true'
+      - 'traefik.http.services.caddy.loadbalancer.server.port=80'
+    image: caddy
+    restart: unless-stopped
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile
+      - ../www:/www
+    depends_on:
+      - php
+      - phpdev
   nginx:
     image: nginx:alpine
     labels:
@@ -8,6 +25,8 @@ services:
       - 'traefik.http.routers.slim.entrypoints=websecure'
       - 'traefik.http.routers.slim.tls=true'
       - 'traefik.http.routers.slim.service=slim'
+      - 'traefik.http.routers.slim.middlewares=slim'
+      - 'traefik.http.middlewares.slim.compress=true'
       - 'traefik.http.services.slim.loadbalancer.server.port=80'
     volumes:
       - ../www:/www
@@ -39,7 +58,6 @@ services:
       - mariadb
       - postgres
       - redis
-      - keydb
     restart: always
     extra_hosts:
       - "${DOMAIN_MAIN}:172.16.1.100"
@@ -56,7 +74,6 @@ services:
       - mariadb
       - postgres
       - redis
-      - keydb
     restart: always
     extra_hosts:
       - "${DOMAIN_MAIN}:172.16.1.100"
@@ -82,28 +99,19 @@ services:
     # command: keydb-server /etc/keydb/keydb.conf --maxmemory 64mb --appendonly no --maxmemory-policy allkeys-lfu
     restart: always
   
-  keydb:
-    image: redis:alpine
-    # image: eqalpha/keydb:alpine
-    ulimits:
-      memlock: -1
-    volumes:
-      - keydb:/data
-    # command: keydb-server /etc/keydb/keydb.conf --maxmemory 16mb --appendonly no --maxmemory-policy allkeys-lru
-    command: redis-server --maxmemory 16mb --appendonly no --maxmemory-policy allkeys-lfu
-    restart: always
-
   ### MariaDB Container #######################################
 
   mariadb:
-    image: mariadb
+    image: jbergstroem/mariadb-alpine
+    # image: mariadb
     hostname: db.pico.test
     labels:
       - 'traefik.tcp.routers.mariadb.rule=HostSNI(`*`)'
       - 'traefik.tcp.routers.mariadb.entrypoints=mariadb'
       - 'traefik.tcp.routers.mariadb.service=mariadb-proxy'
       - 'traefik.tcp.services.mariadb-proxy.loadbalancer.server.port=3306'
-    # command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    # command: mysqld --sql_mode="" --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     volumes:
       - mariadb:/var/lib/mysql
     environment:
