@@ -3,7 +3,7 @@ version: '3.3'
 services:
   caddy:
     labels:
-      - 'traefik.http.routers.caddy.rule=HostRegexp(`${DOMAIN_EXT}`,`${DOMAIN_MAIN}`,`{subdomain:[a-z\-\_]+}.${DOMAIN_MAIN}`, `${DOMAIN_DEV_MAIN}`,`{subdomain:[a-z\-\_]+}.${DOMAIN_DEV_MAIN}`)'
+      - 'traefik.http.routers.caddy.rule=HostRegexp(`${DOMAIN_EXT}`,`{subdomain:[a-z\-\_]+}.${DOMAIN_EXT}`)'
       - 'traefik.http.routers.caddy.entrypoints=websecure'
       - 'traefik.http.routers.caddy.tls=true'
       - 'traefik.http.routers.caddy.service=caddy'
@@ -21,7 +21,7 @@ services:
   nginx:
     image: nginx:alpine
     labels:
-      - 'traefik.http.routers.slim.rule=HostRegexp(`${DOMAIN_EXT}`,`${DOMAIN_MAIN}`,`{subdomain:[a-z\-\_]+}.${DOMAIN_MAIN}`, `${DOMAIN_DEV_MAIN}`,`{subdomain:[a-z\-\_]+}.${DOMAIN_DEV_MAIN}`)'
+      - 'traefik.http.routers.slim.rule=HostRegexp(`${DOMAIN_MAIN}`,`{subdomain:[a-z\-\_]+}.${DOMAIN_MAIN}`, `${DOMAIN_DEV_MAIN}`,`{subdomain:[a-z\-\_]+}.${DOMAIN_DEV_MAIN}`)'
       - 'traefik.http.routers.slim.entrypoints=websecure'
       - 'traefik.http.routers.slim.tls=true'
       - 'traefik.http.routers.slim.service=slim'
@@ -77,6 +77,36 @@ services:
     restart: always
     extra_hosts:
       - "${DOMAIN_MAIN}:172.16.1.100"
+    
+  php80:
+    image: picobug/php:80
+    user: www-data
+    volumes:
+      - ../www:/www
+      - ./php/php.ini:/usr/local/etc/php/php.ini
+    depends_on:
+      - mariadb
+      - postgres
+      - redis
+    restart: always
+    extra_hosts:
+      - "${DOMAIN_MAIN}:172.16.1.100"
+      - "projek.pico.dev:172.16.1.100"
+  
+  php81:
+    image: picobug/php:81
+    user: www-data
+    volumes:
+      - ../www:/www
+      - ./php/php.ini:/usr/local/etc/php/php.ini
+    depends_on:
+      - mariadb
+      - postgres
+      - redis
+    restart: always
+    extra_hosts:
+      - "${DOMAIN_MAIN}:172.16.1.100"
+      - "projek.pico.dev:172.16.1.100"
 
   ### Redis Container #######################################
 
@@ -102,7 +132,8 @@ services:
   ### MariaDB Container #######################################
 
   mariadb:
-    image: jbergstroem/mariadb-alpine
+    image: yobasystems/alpine-mariadb
+    # image: jbergstroem/mariadb-alpine
     # image: mariadb
     hostname: db.pico.test
     labels:
@@ -111,7 +142,7 @@ services:
       - 'traefik.tcp.routers.mariadb.service=mariadb-proxy'
       - 'traefik.tcp.services.mariadb-proxy.loadbalancer.server.port=3306'
     # command: mysqld --sql_mode="" --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
-    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    # command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     volumes:
       - mariadb:/var/lib/mysql
     environment:
