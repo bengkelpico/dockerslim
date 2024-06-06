@@ -73,7 +73,7 @@ services:
   ### Redis Container #######################################
 
   redis:
-    image: rapidfort/redis
+    image: rapidfort/redis:7.2
     ulimits:
       memlock: -1
     hostname: "${DB_HOST}"
@@ -93,8 +93,8 @@ services:
   ### MariaDB Container #######################################
 
   mariadb:
-    image: rapidfort/mariadb:11.3
-    # image: mariadb
+    #image: mariadb:lts
+    image: rapidfort/mariadb-official:11.4.2-noble
     hostname: "${DB_HOST}"
     labels:
       - 'traefik.enable=true'
@@ -103,22 +103,20 @@ services:
       - 'traefik.tcp.routers.mariadb.service=mariadb-proxy'
       - 'traefik.tcp.services.mariadb-proxy.loadbalancer.server.port=3306'
     volumes:
-      - mariadb:/bitnami/mariadb
-      # - mariadb:/var/lib/mysql
+      - mariadb:/var/lib/mysql
     environment:
       MARIADB_DATABASE: julio_pico
       MARIADB_USER: julio
       MARIADB_PASSWORD: "${USER_PASS}"
       MARIADB_ROOT_PASSWORD: "${ROOT_PASS}"
       MARIADB_AUTO_UPGRADE: true
-      MARIADB_SQL_MODE: 'STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION'
     restart: always
 
   ### PostgreSQL Container ####################################
 
   postgres:
-    #image: postgres:alpine
-    image: rapidfort/postgresql-official:16.3-bookworm
+    image: postgres:alpine
+    #image: rapidfort/postgresql-official:16.3-bookworm
     hostname: "${DB_HOST}"
     labels:
       - 'traefik.enable=true'
@@ -127,9 +125,8 @@ services:
       - 'traefik.tcp.routers.postgres.service=postgres-proxy'
       - 'traefik.tcp.services.postgres-proxy.loadbalancer.server.port=5432'
     volumes:
-      - keydb:/var/lib/postgresql/data
-      #- './postgres:/docker-entrypoint-initdb.d'
-      #- './logs:/docker-entrypoint-preinitdb.d'
+      #- keydb:/var/lib/postgresql/data
+      - postgres:/var/lib/postgresql/data
     environment:
       POSTGRES_DB: julio_pico
       POSTGRES_USER: julio
